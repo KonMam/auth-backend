@@ -25,7 +25,7 @@ app.use(cors())
 const auth_router = require('./src/routes/auth.router')
 const dbtest_router = require('./src/routes/dbtest.router')
 
-app.use('/auth', auth_router)
+app.use('/', auth_router)
 app.use('/db-test', dbtest_router)
 
 app.listen(PORT, () => {
