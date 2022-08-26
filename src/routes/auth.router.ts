@@ -39,7 +39,7 @@ router.route('/login').post(async (req, res, next) => {
     res.status(200).json({
         success: true,
         data: {
-          userId: existingUser.id,
+          id: existingUser.id,
           email: existingUser.email,
           token: token,
         },
@@ -54,7 +54,6 @@ router.route('/signup').post(async (req, res, next) => {
     newUser.email = email
     newUser.password = password
 
-    let existingUser;
     try {
         // Creating the new user in DB.
         await appDataSource.getRepository(User).save(newUser)
@@ -79,7 +78,7 @@ router.route('/signup').post(async (req, res, next) => {
     res.status(200).json({
         success: true,
         data: {
-          userId: newUser.id,
+          id: newUser.id,
           email: newUser.email,
           token: token,
         },
