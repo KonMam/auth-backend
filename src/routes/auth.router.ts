@@ -14,6 +14,7 @@ router.route('/login').post(async (req, res, next) => {
         existingUser = await appDataSource.getRepository(User).findOneBy({ email: email })
     } catch {
         const error = new Error("Error! Something went wrong.");
+        return next(error)
     };
 
     if (!existingUser || existingUser.password != password) {
@@ -31,7 +32,6 @@ router.route('/login').post(async (req, res, next) => {
           { expiresIn: "30m" }
         );
     } catch (err) {
-        console.log(err);
         const error = new Error("Error! Something went wrong.");
         return next(error);
     };
@@ -46,8 +46,44 @@ router.route('/login').post(async (req, res, next) => {
     });
 })
 
-router.route('/signup').get((req, res) => {
-    res.status(200).send('This is auth login page.')
+router.route('/signup').post(async (req, res, next) => {
+    const { email, password } = req.body;
+
+    const newUser = new User()
+
+    newUser.email = email
+    newUser.password = password
+
+    let existingUser;
+    try {
+        // Creating the new user in DB.
+        await appDataSource.getRepository(User).save(newUser)
+    } catch {
+        const error = new Error("Error! Something went wrong.");
+        return next(error);
+    };
+
+    let token;
+    try {
+        // Creating jwt token
+        token = sign(
+          { userId: newUser.id, email: newUser.email },
+          "kuibnbsfgsadgps", // TODO: Move secret key to .env
+          { expiresIn: "30m" }
+        );
+    } catch (err) {
+        const error = new Error("Error! Something went wrong.");
+        return next(error);
+    };
+    
+    res.status(200).json({
+        success: true,
+        data: {
+          userId: newUser.id,
+          email: newUser.email,
+          token: token,
+        },
+    });
 })
 
 module.exports = router
