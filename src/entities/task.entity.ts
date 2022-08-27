@@ -1,16 +1,16 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
 
 @Entity()
-export class Pokemon {
+export class Task {
     @PrimaryGeneratedColumn()
     id: number
 
     @Column()
-    name: string
+    userId: number
 
     @Column()
-    hp: number
+    text: string
 
     @Column()
-    str: number
+    status: boolean
 }

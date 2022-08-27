@@ -1,7 +1,8 @@
 import express from 'express'
-import { appDataSource } from '../data-source';
-import { Pokemon } from '../entities/pokemon.entity';
 import { verify } from 'jsonwebtoken'
+
+import { appDataSource } from '../data-source';
+import { Task } from '../entities/task.entity';
 import { User } from '../entities/user.entity';
 
 const router = express.Router()
@@ -34,20 +35,20 @@ router.route('/').get(async (req, res, next) => {
         return next(error)
     };
 
-    // If user is registered and loged in (has token) - return pokemon data.
-    const pokemons = await appDataSource.getRepository(Pokemon).find()
+    // If user is registered and loged in (has token) - return note data.
+    const todos = await appDataSource.getRepository(Task).find()
 
     res.status(200).json({
         success:true,
         data: {
-            pokemons
+            notes: todos
         }
     });
 })
 
 router.route('/').post(async (req, res, next) => {
 
-    const { name, hp, str } = req.body
+    const { text } = req.body
 
     let token;
     try {
@@ -76,14 +77,14 @@ router.route('/').post(async (req, res, next) => {
     };
 
     // If user is registered and loged in (has token) - add pokemon to db.
-    const newPokemon = new Pokemon()
+    const newTask = new Task()
 
-    newPokemon.name = name
-    newPokemon.hp = hp
-    newPokemon.str = str
+    newTask.userId = id
+    newTask.text = text
+    newTask.status = false
 
     try {
-        await appDataSource.getRepository(Pokemon).save(newPokemon)
+        await appDataSource.getRepository(Task).save(newTask)
     } catch {
         const error = new Error("Error! Something went wrong.");
         return next(error);
@@ -92,10 +93,10 @@ router.route('/').post(async (req, res, next) => {
     res.status(200).json({
         success:true,
         data: {
-            id: newPokemon.id,
-            name: newPokemon.name,
-            hp: newPokemon.hp,
-            str: newPokemon.str
+            id: newTask.id,
+            userId: newTask.userId,
+            text: newTask.text,
+            status: newTask.status
         }
     });
 })
