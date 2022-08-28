@@ -5,5 +5,5 @@
 <li>Using typeORM create different entities for storing user credentials and data.</li>
 <li>Using express js create different routes for creating and accessing data.</li>
 <li>Using jwt limit access to the different resources.</li>
-<!-- <li></li> -->
+<li>Refreshing jwt token.</li>
 </ul>
