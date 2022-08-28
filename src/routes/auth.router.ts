@@ -36,6 +36,8 @@ router.route('/login').post(async (req, res, next) => {
         return next(error);
     };
 
+    res.cookie('token', token, { httpOnly: true })
+
     res.status(200).json({
         success: true,
         data: {
@@ -75,6 +77,8 @@ router.route('/signup').post(async (req, res, next) => {
         return next(error);
     };
     
+    res.cookie('token', token, { httpOnly: true })
+
     res.status(200).json({
         success: true,
         data: {

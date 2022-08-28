@@ -11,7 +11,7 @@ router.route('/').get(async (req, res, next) => {
 
     let token;
     try {
-        token = req.headers.authorization!.split(' ')[1];
+        token = req.cookies.token;
     } catch {
         const error = new Error("Error! Token was not provided.");
         return next(error)
@@ -52,7 +52,7 @@ router.route('/').post(async (req, res, next) => {
 
     let token;
     try {
-        token = req.headers.authorization!.split(' ')[1];
+        token = req.cookies.token;
     } catch {
         const error = new Error("Error! Token was not provided.");
         return next(error)

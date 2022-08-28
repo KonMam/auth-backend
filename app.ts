@@ -2,7 +2,7 @@ import express from 'express'
 import { appDataSource } from './src/data-source'
 import cors from 'cors'
 import bodyParser from 'body-parser'
-
+import cookieParser from 'cookie-parser'
 
 const PORT = 5000
 
@@ -21,6 +21,7 @@ app.use(
     })
 );
 app.use(cors())
+app.use(cookieParser())
 
 const auth_router = require('./src/routes/auth.router')
 const task_router = require('./src/routes/task.router')
