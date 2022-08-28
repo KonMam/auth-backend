@@ -36,7 +36,7 @@ router.route('/').get(async (req, res, next) => {
     };
 
     // If user is registered and loged in (has token) - return note data.
-    const todos = await appDataSource.getRepository(Task).find()
+    const todos = await appDataSource.getRepository(Task).findBy({ userId: existingUser!.id})
 
     res.status(200).json({
         success:true,
@@ -79,7 +79,8 @@ router.route('/').post(async (req, res, next) => {
     // If user is registered and loged in (has token) - add pokemon to db.
     const newTask = new Task()
 
-    newTask.userId = id
+    
+    newTask.userId = existingUser!.id
     newTask.text = text
     newTask.status = false
 

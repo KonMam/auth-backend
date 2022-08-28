@@ -23,12 +23,14 @@ app.use(
 app.use(cors())
 
 const auth_router = require('./src/routes/auth.router')
-const pokemon_router = require('./src/routes/pokemon.router')
-const dbtest_router = require('./src/routes/dbtest.router')
+const task_router = require('./src/routes/task.router')
+
+// for testing user data
+const userdata_router = require('./src/routes/userdata.router')
 
 app.use('/', auth_router)
-app.use('/pokemon', pokemon_router)
-app.use('/db-test', dbtest_router)
+app.use('/tasks', task_router)
+app.use('/db-test', userdata_router)
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
