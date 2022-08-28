@@ -38,14 +38,7 @@ router.route('/login').post(async (req, res, next) => {
 
     res.cookie('token', token, { httpOnly: true })
 
-    res.status(200).json({
-        success: true,
-        data: {
-          id: existingUser.id,
-          email: existingUser.email,
-          token: token,
-        },
-    });
+    res.status(200).json({token});
 })
 
 router.route('/signup').post(async (req, res, next) => {
@@ -79,14 +72,7 @@ router.route('/signup').post(async (req, res, next) => {
     
     res.cookie('token', token, { httpOnly: true })
 
-    res.status(200).json({
-        success: true,
-        data: {
-          id: newUser.id,
-          email: newUser.email,
-          token: token,
-        },
-    });
+    res.status(200).json({token});
 })
 
 module.exports = router
