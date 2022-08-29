@@ -38,12 +38,7 @@ router.route('/').get(async (req, res, next) => {
     // If user is registered and loged in (has token) - return note data.
     const todos = await appDataSource.getRepository(Task).findBy({ userId: existingUser!.id})
 
-    res.status(200).json({
-        success:true,
-        data: {
-            notes: todos
-        }
-    });
+    res.status(200).json(todos);
 })
 
 router.route('/').post(async (req, res, next) => {
