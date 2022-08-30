@@ -1,7 +1,8 @@
 import express from 'express'
 import { appDataSource } from '../data-source';
 import { User } from '../entities/user.entity';
-import { sign } from 'jsonwebtoken'
+import { sign, verify } from 'jsonwebtoken'
+import { stringify } from 'querystring';
 
 const router = express.Router()
 
@@ -23,23 +24,68 @@ router.route('/login').post(async (req, res, next) => {
         return next(error);
     };
 
-    let token;
+    let accessToken;
     try {
         // Creating jwt token
-        token = sign(
+        accessToken = sign(
           { userId: existingUser.id, email: existingUser.email },
           "kuibnbsfgsadgps", // TODO: Move secret key to .env
-          { expiresIn: "30m" }
+          { expiresIn: "10m" }
         );
     } catch (err) {
         const error = new Error("Error! Something went wrong.");
         return next(error);
     };
 
-    res.cookie('token', token, { httpOnly: true })
+    let refreshToken;
+    try {
+        refreshToken = sign(
+            {  userId: existingUser.id, email: existingUser.email },
+            "refreshtokensecret", 
+            { expiresIn: '1d' }
+        );
+    } catch (err) {
+            const error = new Error("Error! Something went wrong.");
+            return next(error);
+    };
 
-    res.status(200).json({token});
+    // Assigning refresh token in http-only cookie 
+    res.cookie('jwt', refreshToken, { httpOnly: true, 
+        sameSite: 'none', secure: true, 
+        maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.status(200).json({ accessToken });
 })
+
+router.route('/refresh').post(async (req, res) => {
+    if (req.cookies?.jwt) {
+
+        // Destructuring refreshToken from cookie
+        const refreshToken = req.cookies.jwt;
+
+        // Verifying refresh token
+        interface JwtPayload {
+            id: number,
+            email: string
+        }
+
+       const { id, email } = verify(refreshToken, "kuibnbsfgsadgps" ) as JwtPayload
+
+        // Correct token we send a new access token
+        const accessToken = sign(
+            { userId: id, email: email },
+            "kuibnbsfgsadgps", // TODO: Move secret key to .env
+            { expiresIn: "10m" }
+        );
+
+        return res.json({ accessToken });
+    }
+    else {
+        return res.status(406).json({ message: 'Unauthorized' });
+    }
+});
+
 
 router.route('/signup').post(async (req, res, next) => {
     const { email, password } = req.body;
