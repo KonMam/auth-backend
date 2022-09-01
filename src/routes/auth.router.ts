@@ -92,7 +92,7 @@ router.route('/refresh').post(async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000
         });
 
-        return res.status(200);
+        return res.status(200).json({"message": "Success"});
     }
     else {
         return res.status(406).json({ message: 'Unauthorized' });
@@ -152,7 +152,7 @@ router.route('/signup').post(async (req, res, next) => {
         maxAge: 24 * 60 * 60 * 1000
     });
 
-    res.status(200).json({ accessToken });
+    res.status(200).json({"message": "Success"});
 })
 
 module.exports = router
