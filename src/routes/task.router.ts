@@ -1,17 +1,22 @@
 import express from 'express'
-import { verify } from 'jsonwebtoken'
+import { Secret, verify } from 'jsonwebtoken'
 
 import { appDataSource } from '../data-source';
 import { Task } from '../entities/task.entity';
 import { User } from '../entities/user.entity';
+import dotenv from 'dotenv'
 
 const router = express.Router()
 
-router.route('/').get(async (req, res, next) => {
+dotenv.config()
+const accessSecret = process.env.ACCESS_TOKEN_SECRET as Secret
 
+router.route('/').get(async (req, res, next) => {
+    
+    console.log(req.cookies.accessToken)
     let token;
     try {
-        token = req.cookies.jwt;
+        token = req.cookies.accessToken;
     } catch {
         const error = new Error("Error! Token was not provided.");
         return next(error)
@@ -23,7 +28,9 @@ router.route('/').get(async (req, res, next) => {
         email: string
     }
 
-    const { id, email } = verify(token, "refreshtokensecret" ) as JwtPayload
+    console.log(token)
+
+    const { id, email } = verify(token, accessSecret ) as JwtPayload
     
     
     // Checking if user exists in DB.
@@ -47,7 +54,7 @@ router.route('/').post(async (req, res, next) => {
 
     let token;
     try {
-        token = req.cookies.jwt;
+        token = req.cookies.accessToken;
     } catch {
         const error = new Error("Error! Token was not provided.");
         return next(error)
@@ -59,7 +66,7 @@ router.route('/').post(async (req, res, next) => {
         email: string
     }
 
-    const { id, email } = verify(token, "refreshtokensecret" ) as JwtPayload
+    const { id, email } = verify(token, accessSecret ) as JwtPayload
     
     
     // Checking if user exists in DB.

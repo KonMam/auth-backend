@@ -1,9 +1,14 @@
 import express from 'express'
 import { appDataSource } from '../data-source';
 import { User } from '../entities/user.entity';
-import { sign, verify } from 'jsonwebtoken'
+import { Secret, sign, verify } from 'jsonwebtoken'
+import dotenv from 'dotenv'
 
 const router = express.Router()
+
+dotenv.config()
+const accessSecret = process.env.ACCESS_TOKEN_SECRET as Secret
+const refreshSecret = process.env.REFRESH_TOKEN_SECRET as Secret
 
 router.route('/login').post(async (req, res, next) => {
     const { email, password } = req.body;
@@ -28,7 +33,7 @@ router.route('/login').post(async (req, res, next) => {
         // Creating jwt token
         accessToken = sign(
           { userId: existingUser.id, email: existingUser.email },
-          "kuibnbsfgsadgps", // TODO: Move secret key to .env
+          accessSecret, // TODO: Move secret key to .env
           { expiresIn: "10m" }
         );
     } catch (err) {
@@ -40,7 +45,7 @@ router.route('/login').post(async (req, res, next) => {
     try {
         refreshToken = sign(
             {  userId: existingUser.id, email: existingUser.email },
-            "refreshtokensecret", 
+            refreshSecret, 
             { expiresIn: '1d' }
         );
     } catch (err) {
@@ -49,20 +54,23 @@ router.route('/login').post(async (req, res, next) => {
     };
 
     // Assigning refresh token in http-only cookie 
-    res.cookie('jwt', refreshToken, 
-    { httpOnly: true, 
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, 
+      sameSite: 'none', secure: true, 
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.cookie("accessToken", accessToken, { httpOnly: true, 
         sameSite: 'none', secure: true, 
         maxAge: 24 * 60 * 60 * 1000
-    }
-    );
+    });
 
-    res.status(200).json({ accessToken });
+    res.status(200).json({"message": "Success"});
 })
 
 router.route('/refresh').post(async (req, res) => {
-    if (req.cookies?.jwt) {
+    if (req.cookies?.refreshToken) {
 
-        const refreshToken = req.cookies.jwt;
+        const refreshToken = req.cookies.refreshToken;
 
         // Verifying refresh token
         interface JwtPayload {
@@ -70,16 +78,21 @@ router.route('/refresh').post(async (req, res) => {
             email: string
         }
 
-       const { id, email } = verify(refreshToken, "refreshtokensecret" ) as JwtPayload
+       const { id, email } = verify(refreshToken, refreshSecret ) as JwtPayload
 
         // Correct token we send a new access token
         const accessToken = sign(
             { userId: id, email: email },
-            "kuibnbsfgsadgps", // TODO: Move secret key to .env
+            accessSecret, // TODO: Move secret key to .env
             { expiresIn: "10m" }
         );
 
-        return res.status(200).json({ accessToken });
+        res.cookie("accessToken", accessToken, { httpOnly: true, 
+            sameSite: 'none', secure: true, 
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        return res.status(200);
     }
     else {
         return res.status(406).json({ message: 'Unauthorized' });
@@ -108,7 +121,7 @@ router.route('/signup').post(async (req, res, next) => {
         // Creating jwt token
         accessToken = sign(
           { userId: newUser.id, email: newUser.email },
-          "kuibnbsfgsadgps", // TODO: Move secret key to .env
+          accessSecret, // TODO: Move secret key to .env
           { expiresIn: "30m" }
         );
     } catch (err) {
@@ -120,7 +133,7 @@ router.route('/signup').post(async (req, res, next) => {
     try {
         refreshToken = sign(
             {  userId: newUser.id, email: newUser.email },
-            "refreshtokensecret", 
+            refreshSecret, 
             { expiresIn: '1d' }
         );
     } catch (err) {
@@ -129,12 +142,15 @@ router.route('/signup').post(async (req, res, next) => {
     };
 
     // Assigning refresh token in http-only cookie 
-    res.cookie('jwt', refreshToken, 
-    { httpOnly: true, 
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, 
         sameSite: 'none', secure: true, 
         maxAge: 24 * 60 * 60 * 1000
-    }
-    );
+    });
+
+    res.cookie("accessToken", accessToken, { httpOnly: true, 
+        sameSite: 'none', secure: true, 
+        maxAge: 24 * 60 * 60 * 1000
+    });
 
     res.status(200).json({ accessToken });
 })
