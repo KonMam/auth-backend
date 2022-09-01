@@ -2,7 +2,6 @@ import express from 'express'
 import { appDataSource } from '../data-source';
 import { User } from '../entities/user.entity';
 import { sign, verify } from 'jsonwebtoken'
-import { stringify } from 'querystring';
 
 const router = express.Router()
 

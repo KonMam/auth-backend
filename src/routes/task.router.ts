@@ -11,7 +11,7 @@ router.route('/').get(async (req, res, next) => {
 
     let token;
     try {
-        token = req.cookies.token;
+        token = req.cookies.jwt;
     } catch {
         const error = new Error("Error! Token was not provided.");
         return next(error)
@@ -23,7 +23,7 @@ router.route('/').get(async (req, res, next) => {
         email: string
     }
 
-    const { id, email } = verify(token, "kuibnbsfgsadgps" ) as JwtPayload
+    const { id, email } = verify(token, "refreshtokensecret" ) as JwtPayload
     
     
     // Checking if user exists in DB.
@@ -47,7 +47,7 @@ router.route('/').post(async (req, res, next) => {
 
     let token;
     try {
-        token = req.cookies.token;
+        token = req.cookies.jwt;
     } catch {
         const error = new Error("Error! Token was not provided.");
         return next(error)
@@ -59,7 +59,7 @@ router.route('/').post(async (req, res, next) => {
         email: string
     }
 
-    const { id, email } = verify(token, "kuibnbsfgsadgps" ) as JwtPayload
+    const { id, email } = verify(token, "refreshtokensecret" ) as JwtPayload
     
     
     // Checking if user exists in DB.
