@@ -50,10 +50,12 @@ router.route('/login').post(async (req, res, next) => {
     };
 
     // Assigning refresh token in http-only cookie 
-    res.cookie('jwt', refreshToken, { httpOnly: true, 
+    res.cookie('jwt', refreshToken, 
+    { httpOnly: true, 
         sameSite: 'none', secure: true, 
         maxAge: 24 * 60 * 60 * 1000
-    });
+    }
+    );
 
     res.status(200).json({ accessToken });
 })
@@ -61,7 +63,6 @@ router.route('/login').post(async (req, res, next) => {
 router.route('/refresh').post(async (req, res) => {
     if (req.cookies?.jwt) {
 
-        // Destructuring refreshToken from cookie
         const refreshToken = req.cookies.jwt;
 
         // Verifying refresh token
@@ -70,7 +71,7 @@ router.route('/refresh').post(async (req, res) => {
             email: string
         }
 
-       const { id, email } = verify(refreshToken, "kuibnbsfgsadgps" ) as JwtPayload
+       const { id, email } = verify(refreshToken, "refreshtokensecret" ) as JwtPayload
 
         // Correct token we send a new access token
         const accessToken = sign(
@@ -79,7 +80,7 @@ router.route('/refresh').post(async (req, res) => {
             { expiresIn: "10m" }
         );
 
-        return res.json({ accessToken });
+        return res.status(200).json({ accessToken });
     }
     else {
         return res.status(406).json({ message: 'Unauthorized' });
@@ -103,10 +104,10 @@ router.route('/signup').post(async (req, res, next) => {
         return next(error);
     };
 
-    let token;
+    let accessToken;
     try {
         // Creating jwt token
-        token = sign(
+        accessToken = sign(
           { userId: newUser.id, email: newUser.email },
           "kuibnbsfgsadgps", // TODO: Move secret key to .env
           { expiresIn: "30m" }
@@ -115,10 +116,28 @@ router.route('/signup').post(async (req, res, next) => {
         const error = new Error("Error! Something went wrong.");
         return next(error);
     };
-    
-    res.cookie('token', token, { httpOnly: true })
 
-    res.status(200).json({token});
+    let refreshToken;
+    try {
+        refreshToken = sign(
+            {  userId: newUser.id, email: newUser.email },
+            "refreshtokensecret", 
+            { expiresIn: '1d' }
+        );
+    } catch (err) {
+            const error = new Error("Error! Something went wrong.");
+            return next(error);
+    };
+
+    // Assigning refresh token in http-only cookie 
+    res.cookie('jwt', refreshToken, 
+    { httpOnly: true, 
+        sameSite: 'none', secure: true, 
+        maxAge: 24 * 60 * 60 * 1000
+    }
+    );
+
+    res.status(200).json({ accessToken });
 })
 
 module.exports = router
