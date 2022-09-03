@@ -33,8 +33,8 @@ router.route('/login').post(async (req, res, next) => {
         // Creating jwt token
         accessToken = sign(
           { userId: existingUser.id, email: existingUser.email },
-          accessSecret, // TODO: Move secret key to .env
-          { expiresIn: "10m" }
+          accessSecret,
+          { expiresIn: "30m" }
         );
     } catch (err) {
         const error = new Error("Error! Something went wrong.");
@@ -46,7 +46,7 @@ router.route('/login').post(async (req, res, next) => {
         refreshToken = sign(
             {  userId: existingUser.id, email: existingUser.email },
             refreshSecret, 
-            { expiresIn: '1d' }
+            { expiresIn: '15d' }
         );
     } catch (err) {
             const error = new Error("Error! Something went wrong.");
@@ -56,12 +56,12 @@ router.route('/login').post(async (req, res, next) => {
     // Assigning refresh token in http-only cookie 
     res.cookie("refreshToken", refreshToken, { httpOnly: true, 
       sameSite: 'none', secure: true, 
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: 24 * 60 * 60 * 1000 * 15
     });
 
     res.cookie("accessToken", accessToken, { httpOnly: true, 
         sameSite: 'none', secure: true, 
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 30 * 60 * 1000
     });
 
     res.status(200).json({"message": "Success"});
@@ -78,18 +78,18 @@ router.route('/refresh').post(async (req, res) => {
             email: string
         }
 
-       const { id, email } = verify(refreshToken, refreshSecret ) as JwtPayload
+       const { id, email } = verify(refreshToken, refreshSecret) as JwtPayload
 
         // Correct token we send a new access token
         const accessToken = sign(
             { userId: id, email: email },
             accessSecret, // TODO: Move secret key to .env
-            { expiresIn: "10m" }
+            { expiresIn: "30m" }
         );
 
         res.cookie("accessToken", accessToken, { httpOnly: true, 
             sameSite: 'none', secure: true, 
-            maxAge: 24 * 60 * 60 * 1000
+            maxAge: 30 * 60 * 1000
         });
 
         return res.status(200).json({"message": "Success"});
@@ -134,7 +134,7 @@ router.route('/signup').post(async (req, res, next) => {
         refreshToken = sign(
             {  userId: newUser.id, email: newUser.email },
             refreshSecret, 
-            { expiresIn: '1d' }
+            { expiresIn: '15d' }
         );
     } catch (err) {
             const error = new Error("Error! Something went wrong.");
@@ -142,14 +142,14 @@ router.route('/signup').post(async (req, res, next) => {
     };
 
     // Assigning refresh token in http-only cookie 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, 
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, 
         sameSite: 'none', secure: true, 
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000 * 15
     });
-
-    res.cookie("accessToken", accessToken, { httpOnly: true, 
-        sameSite: 'none', secure: true, 
-        maxAge: 24 * 60 * 60 * 1000
+  
+      res.cookie("accessToken", accessToken, { httpOnly: true, 
+          sameSite: 'none', secure: true, 
+          maxAge: 30 * 60 * 1000
     });
 
     res.status(200).json({"message": "Success"});

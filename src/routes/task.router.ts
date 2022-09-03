@@ -11,9 +11,14 @@ const router = express.Router()
 dotenv.config()
 const accessSecret = process.env.ACCESS_TOKEN_SECRET as Secret
 
+interface JwtPayload {
+        id: number,
+        email: string,
+        exp: number
+}
+
 router.route('/').get(async (req, res, next) => {
     
-    console.log(req.cookies.accessToken)
     let token;
     try {
         token = req.cookies.accessToken;
@@ -22,17 +27,14 @@ router.route('/').get(async (req, res, next) => {
         return next(error)
     }
 
-    // Decoding the token
-    interface JwtPayload {
-        id: number,
-        email: string
+
+    let id, email, exp;
+    try {
+        ({ id, email, exp } = verify(token, accessSecret) as JwtPayload)
+    } catch (err) {
+        return res.status(401).send('Invalid Token');
     }
 
-    console.log(token)
-
-    const { id, email } = verify(token, accessSecret ) as JwtPayload
-    
-    
     // Checking if user exists in DB.
     let existingUser;
     try {
