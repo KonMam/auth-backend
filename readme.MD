@@ -6,4 +6,5 @@
 <li>Using express js create different routes for creating and accessing data.</li>
 <li>Using jwt limit access to the different resources.</li>
 <li>Refreshing jwt token.</li>
+<li>Hashing and salting</li> 
 </ul>

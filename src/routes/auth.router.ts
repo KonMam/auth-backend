@@ -3,6 +3,7 @@ import { appDataSource } from '../data-source';
 import { User } from '../entities/user.entity';
 import { Secret, sign, verify } from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import { hash, compare } from 'bcrypt'
 
 const router = express.Router()
 
@@ -13,58 +14,37 @@ const refreshSecret = process.env.REFRESH_TOKEN_SECRET as Secret
 router.route('/login').post(async (req, res, next) => {
     const { email, password } = req.body;
 
-    let existingUser;
-    try {
-        // Checking if user exists in DB.
-        existingUser = await appDataSource.getRepository(User).findOneBy({ email: email })
-    } catch {
-        const error = new Error("Error! Something went wrong.");
-        return next(error)
-    };
 
-    if (!existingUser || existingUser.password != password) {
-        // Checking if password matches to DB.
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ email: email })
+
+    if (!existingUser) {
         const error = Error("Wrong details provided.");
-        return next(error);
-    };
-
-    let accessToken;
-    try {
-        // Creating jwt token
-        accessToken = sign(
-          { userId: existingUser.id, email: existingUser.email },
-          accessSecret,
-          { expiresIn: "30m" }
-        );
-    } catch (err) {
-        const error = new Error("Error! Something went wrong.");
-        return next(error);
-    };
-
-    let refreshToken;
-    try {
-        refreshToken = sign(
-            {  userId: existingUser.id, email: existingUser.email },
-            refreshSecret, 
-            { expiresIn: '15d' }
-        );
-    } catch (err) {
-            const error = new Error("Error! Something went wrong.");
             return next(error);
-    };
+    }
 
-    // Assigning refresh token in http-only cookie 
-    res.cookie("refreshToken", refreshToken, { httpOnly: true, 
-      sameSite: 'none', secure: true, 
-      maxAge: 24 * 60 * 60 * 1000 * 15
+    compare(password, existingUser.password, function(err, result) {
+        if (!result) {
+            const error = Error("Wrong details provided.");
+            return next(error);
+        };
     });
+    
+    const accessToken = sign({ userId: existingUser.id, email: existingUser.email }, accessSecret, { expiresIn: "30m" });
+
+    const refreshToken = sign({  userId: existingUser.id, email: existingUser.email }, refreshSecret, { expiresIn: '15d' });
 
     res.cookie("accessToken", accessToken, { httpOnly: true, 
         sameSite: 'none', secure: true, 
         maxAge: 30 * 60 * 1000
     });
 
-    res.status(200).json({"message": "Success"});
+    res.cookie("refreshToken", refreshToken, { httpOnly: true, 
+      sameSite: 'none', secure: true, 
+      maxAge: 24 * 60 * 60 * 1000 * 15
+    });
+
+
+    res.status(200).json({"message": "Success"})
 })
 
 router.route('/refresh').post(async (req, res) => {
@@ -106,15 +86,18 @@ router.route('/signup').post(async (req, res, next) => {
     const newUser = new User()
 
     newUser.email = email
-    newUser.password = password
+    hash(password, 10, async function(err, hash) {
+        newUser.password = hash
+        try {
+            // Creating the new user in DB.
+            await appDataSource.getRepository(User).save(newUser)
+        } catch {
+            const error = new Error("Error! Something went wrong.");
+            return next(error);
+        };
+    });
 
-    try {
-        // Creating the new user in DB.
-        await appDataSource.getRepository(User).save(newUser)
-    } catch {
-        const error = new Error("Error! Something went wrong.");
-        return next(error);
-    };
+
 
     let accessToken;
     try {
@@ -124,6 +107,7 @@ router.route('/signup').post(async (req, res, next) => {
           accessSecret, // TODO: Move secret key to .env
           { expiresIn: "30m" }
         );
+
     } catch (err) {
         const error = new Error("Error! Something went wrong.");
         return next(error);
