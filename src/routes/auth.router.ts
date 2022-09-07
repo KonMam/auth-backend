@@ -46,10 +46,11 @@ router.route('/login').post(async (req, res, next) => {
 
 
 router.route('/signup').post(async (req, res, next) => {
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
 
     const newUser = new User()
     hash(password, 10, async function(err, hash) {
+        newUser.username = username
         newUser.email = email
         newUser.password = hash
 

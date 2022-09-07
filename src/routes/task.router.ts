@@ -18,12 +18,10 @@ interface JwtPayload {
 }
 
 router.route('/').get(async (req, res, next) => {
-    let token;
-    try {
-        token = req.cookies.accessToken;
-    } catch {
-        const error = new Error("Error! Token was not provided.");
-        return next(error)
+
+    const token = req.cookies.accessToken;
+    if (!token) {
+        return res.status(401).send('Token not provided.');
     }
 
     let id, email, exp;
@@ -33,17 +31,17 @@ router.route('/').get(async (req, res, next) => {
         return res.status(401).send('Invalid Token');
     }
 
-    // Checking if user exists in DB.
-    let existingUser;
-    try {
-        existingUser = await appDataSource.getRepository(User).findOneBy({ email: email })
-    } catch {
-        const error = new Error("Error! Something went wrong.");
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: id })
+    if (!existingUser) {
+        const error = new Error("Error! Couldn't get this user.");
         return next(error)
-    };
+    }
 
-    // If user is registered and loged in (has token) - return note data.
-    const todos = await appDataSource.getRepository(Task).findBy({ userId: existingUser!.id})
+    const todos = await appDataSource.getRepository(Task).findBy({ userId: existingUser.id})
+    if (!todos) {
+        const error = new Error("Error! Couldn't get the tasks.");
+        return next(error)
+    }
 
     res.status(200).json(todos);
 })
