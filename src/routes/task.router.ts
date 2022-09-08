@@ -98,17 +98,14 @@ router.route('/').post(async (req, res, next) => {
 })
 
 
-router.route('/:taskId').put(async (req, res, next) => {
+router.route('/:taskId').post(async (req, res, next) => {
 
     const taskId: number = parseInt(req.params.taskId)
     const status: boolean = req.body.status
 
-    let token;
-    try {
-        token = req.cookies.accessToken;
-    } catch {
-        const error = new Error("Error! Token was not provided.");
-        return next(error)
+    const token = req.cookies.accessToken;
+    if (!token) {
+        return res.status(401).send('Token not provided.');
     }
 
     let id, email, exp;
@@ -119,31 +116,52 @@ router.route('/:taskId').put(async (req, res, next) => {
     }
 
     // Checking if user exists in DB.
-    let existingUser;
-    try {
-        existingUser = await appDataSource.getRepository(User).findOneBy({ email: email })
-    } catch {
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: id })
+    if (!existingUser) {
         const error = new Error("Error! Something went wrong.");
         return next(error)
-    };
+    }
 
     // If user is registered and loged in (has token) - return note data.
     const todos = await appDataSource.getRepository(Task).findOneBy({ id: taskId })
-    if (todos) {
-        todos.status = status
+    if (!todos) {
+        const error = new Error("Error! Something went wrong.");
+        return next(error);
+    };
 
-        try {
-            await appDataSource.getRepository(Task).save(todos)
-        } catch {
-            const error = new Error("Error! Something went wrong.");
-            return next(error);
-        };
-    } 
-    
-    
-    
+    todos.status = status
+    await appDataSource.getRepository(Task).save(todos)
 
-    res.status(200).json(todos);
+    res.status(200).json({ success:true, data: { id: todos.id, userId: todos.userId, text: todos.text, status: todos.status}});
+})
+
+router.route('/:taskId').delete(async (req, res, next) => {
+
+    const taskId: number = parseInt(req.params.taskId)
+
+    const token = req.cookies.accessToken;
+    if (!token) {
+        return res.status(401).send('Token not provided.');
+    }
+
+    let id, email, exp;
+    try {
+        ({ id, email, exp } = verify(token, accessSecret) as JwtPayload)
+    } catch (err) {
+        return res.status(401).send('Invalid Token');
+    }
+
+    // Checking if user exists in DB.
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: id })
+    if (!existingUser) {
+        const error = new Error("Error! Something went wrong.");
+        return next(error)
+    }
+    
+    // If user is registered and loged in (has token) - return note data.
+    await appDataSource.getRepository(Task).delete({ id: taskId })
+
+    res.status(200).json({ success:true });
 })
 
 module.exports = router
