@@ -12,7 +12,7 @@ dotenv.config()
 const accessSecret = process.env.ACCESS_TOKEN_SECRET as Secret
 
 interface JwtPayload {
-        id: number,
+        userId: number,
         email: string,
         exp: number
 }
@@ -24,19 +24,19 @@ router.route('/').get(async (req, res, next) => {
         return res.status(401).send('Token not provided.');
     }
 
-    let id, email, exp;
+    let userId, email, exp;
     try {
-        ({ id, email, exp } = verify(token, accessSecret) as JwtPayload)
+        ({ userId, email, exp } = verify(token, accessSecret) as JwtPayload)
     } catch (err) {
         return res.status(401).send('Invalid Token');
     }
 
-    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: id })
+    console.log(userId, email, exp)
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: userId })
     if (!existingUser) {
         const error = new Error("Error! Couldn't get this user.");
         return next(error)
     }
-
     const todos = await appDataSource.getRepository(Task).findBy({ userId: existingUser.id})
     if (!todos) {
         const error = new Error("Error! Couldn't get the tasks.");
@@ -57,9 +57,9 @@ router.route('/').post(async (req, res, next) => {
         return next(error)
     }
 
-    let id, email, exp;
+    let userId, email, exp;
     try {
-        ({ id, email, exp } = verify(token, accessSecret) as JwtPayload)
+        ({ userId, email, exp } = verify(token, accessSecret) as JwtPayload)
     } catch (err) {
         return res.status(401).send('Invalid Token');
     }
@@ -101,22 +101,23 @@ router.route('/').post(async (req, res, next) => {
 router.route('/:taskId').post(async (req, res, next) => {
 
     const taskId: number = parseInt(req.params.taskId)
-    const status: boolean = req.body.status
+    const status: boolean  = req.body.status
+    const text: string = req.body.text
 
     const token = req.cookies.accessToken;
     if (!token) {
         return res.status(401).send('Token not provided.');
     }
 
-    let id, email, exp;
+    let userId, email, exp;
     try {
-        ({ id, email, exp } = verify(token, accessSecret) as JwtPayload)
+        ({ userId, email, exp } = verify(token, accessSecret) as JwtPayload)
     } catch (err) {
         return res.status(401).send('Invalid Token');
     }
 
     // Checking if user exists in DB.
-    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: id })
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: userId })
     if (!existingUser) {
         const error = new Error("Error! Something went wrong.");
         return next(error)
@@ -130,6 +131,7 @@ router.route('/:taskId').post(async (req, res, next) => {
     };
 
     todos.status = status
+    todos.text = text
     await appDataSource.getRepository(Task).save(todos)
 
     res.status(200).json({ success:true, data: { id: todos.id, userId: todos.userId, text: todos.text, status: todos.status}});
@@ -144,15 +146,15 @@ router.route('/:taskId').delete(async (req, res, next) => {
         return res.status(401).send('Token not provided.');
     }
 
-    let id, email, exp;
+    let userId, email, exp;
     try {
-        ({ id, email, exp } = verify(token, accessSecret) as JwtPayload)
+        ({ userId, email, exp } = verify(token, accessSecret) as JwtPayload)
     } catch (err) {
         return res.status(401).send('Invalid Token');
     }
 
     // Checking if user exists in DB.
-    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: id })
+    const existingUser = await appDataSource.getRepository(User).findOneBy({ id: userId })
     if (!existingUser) {
         const error = new Error("Error! Something went wrong.");
         return next(error)

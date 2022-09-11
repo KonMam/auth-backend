@@ -18,6 +18,7 @@ router.route('/login').post(async (req, res, next) => {
 
     if (!existingUser) {
         const error = Error("Wrong details provided.");
+            res.status(401).json({"message": "Wrong user details"})
             return next(error);
     }
 
@@ -39,7 +40,7 @@ router.route('/login').post(async (req, res, next) => {
         
             res.status(200).json({"message": "Success"})
         } else {
-            res.status(401).json({"message": "Incorrect Password"})
+            res.status(401).json({"message": "Wrong user details"})
         }
     });
 })
